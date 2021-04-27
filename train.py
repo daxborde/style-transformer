@@ -382,8 +382,8 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
     acc_pos = evaluator.yelp_acc_1(rev_output[1])
     bleu_neg = evaluator.yelp_ref_bleu_0(rev_output[0])
     bleu_pos = evaluator.yelp_ref_bleu_1(rev_output[1])
-    ppl_neg = evaluator.yelp_ppl(rev_output[0])
-    ppl_pos = evaluator.yelp_ppl(rev_output[1])
+    # ppl_neg = evaluator.yelp_ppl(rev_output[0])
+    # ppl_pos = evaluator.yelp_ppl(rev_output[1])
 
     for k in range(5):
         idx = np.random.randint(len(rev_output[0]))
@@ -406,10 +406,12 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
 
     print('*' * 20, '********', '*' * 20)
 
+    #  + \
+    #   'ppl_pos: {:.4f} ppl_neg: {:.4f}\n'
+    # ppl_pos, ppl_neg,
     print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-          'bleu_pos: {:.4f} bleu_neg: {:.4f} ' + \
-          'ppl_pos: {:.4f} ppl_neg: {:.4f}\n').format(
-              acc_pos, acc_neg, bleu_pos, bleu_neg, ppl_pos, ppl_neg,
+          'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+              acc_pos, acc_neg, bleu_pos, bleu_neg,
     ))
 
     
@@ -418,15 +420,13 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
     eval_log_file = config.save_folder + '/eval_log.txt'
     with open(eval_log_file, 'a') as fl:
         print(('iter{:5d}:  acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-               'bleu_pos: {:.4f} bleu_neg: {:.4f} ' + \
-               'ppl_pos: {:.4f} ppl_neg: {:.4f}\n').format(
-            global_step, acc_pos, acc_neg, bleu_pos, bleu_neg, ppl_pos, ppl_neg,
+               'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+            global_step, acc_pos, acc_neg, bleu_pos, bleu_neg,
         ), file=fl)
     with open(save_file, 'w') as fw:
         print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-               'bleu_pos: {:.4f} bleu_neg: {:.4f} ' + \
-               'ppl_pos: {:.4f} ppl_neg: {:.4f}\n').format(
-            acc_pos, acc_neg, bleu_pos, bleu_neg, ppl_pos, ppl_neg,
+               'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+            acc_pos, acc_neg, bleu_pos, bleu_neg,
         ), file=fw)
 
         for idx in range(len(rev_output[0])):
