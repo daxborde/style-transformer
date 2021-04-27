@@ -1,12 +1,11 @@
 import torch
 import time
-from data import load_dataset
+from data import load_enron
 from models import StyleTransformer, Discriminator
 from train import train, auto_eval
 
-
 class Config():
-    data_path = './data/yelp/'
+    data_path = './data/enronpa/'
     log_dir = 'runs/exp'
     save_path = './save'
     pretrained_embed_path = './embedding/'
@@ -14,7 +13,7 @@ class Config():
     discriminator_method = 'Multi' # 'Multi' or 'Cond'
     load_pretrained_embed = False
     min_freq = 3
-    max_length = 16
+    max_length = 2864
     embed_size = 256
     d_model = 256
     h = 4
@@ -44,17 +43,15 @@ class Config():
     inp_rand_drop_fac = 0
     inp_drop_prob = 0
 
-
 def main():
     config = Config()
-    train_iters, dev_iters, test_iters, vocab = load_dataset(config)
+    train_iters, test_iters, vocab = load_enron(config)
     print('Vocab size:', len(vocab))
     model_F = StyleTransformer(config, vocab).to(config.device)
     model_D = Discriminator(config, vocab).to(config.device)
     print(config.discriminator_method)
     
-    train(config, vocab, model_F, model_D, train_iters, dev_iters, test_iters)
+    train(config, vocab, model_F, model_D, train_iters, test_iters)
     
-
 if __name__ == '__main__':
     main()
