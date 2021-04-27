@@ -2,8 +2,9 @@ import time
 import numpy as np
 import torchtext
 from torchtext.legacy import data
-
+import pandas as pd
 from utils import tensor2text
+from sklearn.model_selection import train_test_split
 
 class DatasetIterator(object):
     def __init__(self, pos_iter, neg_iter):
@@ -14,6 +15,58 @@ class DatasetIterator(object):
         for batch_pos, batch_neg in zip(iter(self.pos_iter), iter(self.neg_iter)):
             if batch_pos.text.size(0) == batch_neg.text.size(0):
                 yield batch_pos.text, batch_neg.text
+
+class EnronIterator(object):
+    def __init__(self, iter_1, iter_2):
+        self.iter_1 = iter_1
+        self.iter_2 = iter_2
+    
+    def __iter__(self):
+        for batch_1, batch_2 in zip(iter(self.iter_1, self.iter_2)):
+            if batch_1.content.size(0) == batch_2.content.size(0):
+                yield batch_1.content, batch_2.content
+
+def load_enron(config, filepath):
+    enron = pd.read_csv(filepath)
+    
+    classes = enron.From.unique()
+
+    # Separate the first two authors.
+    class_1 = enron.loc[enron['From'] == classes[0]]
+    class_1 = class_1.reset_index()['content']
+    class_2 = enron.loc[enron['From'] == classes[1]]
+    class_2 = class_2.reset_index()['content']
+
+    smallest_len = min(len(class_1), len(class_2))
+    
+    class_1 = class_1.iloc[:smallest_len]
+    class_2 = class_2.iloc[:smallest_len]
+
+    train_1, train_2, test_1, test_2 = train_test_split(class_1, class_2, test_size=0.1, random_state=64209)
+
+    TEXT = data.Field(batch_first=True, eos_token='<eos>')
+
+    TEXT.build_vocab(train_1, train_2, min_freq=config.min_freq)
+
+    vocab = TEXT.vocab()
+
+    dataiter_fn = lambda dataset, train: data.BucketIterator(
+        dataset=dataset,
+        batch_size=config.batch_size,
+        shuffle=train,
+        repeat=train,
+        sort_key=lambda x: len(x.text),
+        sort_within_batch=False,
+        device=config.device
+    )
+
+    train_iter_1, train_iter_2 = map(lambda x: dataiter_fn(x, True), [train_1, train_2])
+    test_iter_1, test_iter_2 = map(lambda x:dataiter_fn(x, False), [test_1, test_2])
+
+    train_iters = EnronIterator(train_iter_1, train_iter_2)
+    test_iters = EnronIterator(test_iter_1, test_iter_2)
+
+    return train_iters, test_iters, vocab
 
 def load_dataset(config, train_pos='train.pos', train_neg='train.neg',
                  dev_pos='dev.pos', dev_neg='dev.neg',
@@ -27,7 +80,7 @@ def load_dataset(config, train_pos='train.pos', train_neg='train.neg',
         format='tsv',
         fields=[('text', TEXT)]
     )
-
+    
     train_pos_set, train_neg_set = map(dataset_fn, [train_pos, train_neg])
     dev_pos_set, dev_neg_set = map(dataset_fn, [dev_pos, dev_neg])
     test_pos_set, test_neg_set = map(dataset_fn, [test_pos, test_neg])
@@ -64,7 +117,6 @@ def load_dataset(config, train_pos='train.pos', train_neg='train.neg',
     test_iters = DatasetIterator(test_pos_iter, test_neg_iter)
     
     return train_iters, dev_iters, test_iters, vocab
-
 
 if __name__ == '__main__':
     train_iter, _, _, vocab = load_dataset('../data/yelp/')
