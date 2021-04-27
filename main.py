@@ -4,9 +4,8 @@ from data import load_enron
 from models import StyleTransformer, Discriminator
 from train import train, auto_eval
 
-
 class Config():
-    data_path = './data/yelp/'
+    data_path = './data/enronpa/'
     log_dir = 'runs/exp'
     save_path = './save'
     pretrained_embed_path = './embedding/'
@@ -43,7 +42,6 @@ class Config():
     inp_unk_drop_fac = 0
     inp_rand_drop_fac = 0
     inp_drop_prob = 0
-
 
 def main():
     config = Config()
