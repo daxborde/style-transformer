@@ -13,7 +13,7 @@ class Config():
     discriminator_method = 'Multi' # 'Multi' or 'Cond'
     load_pretrained_embed = False
     min_freq = 3
-    max_length = 2864
+    max_length = 100
     embed_size = 256
     d_model = 256
     h = 4
