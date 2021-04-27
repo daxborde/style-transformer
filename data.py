@@ -27,7 +27,7 @@ class EnronIterator(object):
 
 def load_enron(config, 
                 train_input_1='train_input_1.txt', 
-                train_input_2='train_input_2.txt ',
+                train_input_2='train_input_2.txt',
                 test_input_1='test_input_1.txt', 
                 test_input_2='test_input_2.txt'):
 
