@@ -317,11 +317,9 @@ def train(config, vocab, model_F, model_D, train_iters, test_iters):
 
 
             loss_log_file = open(config.loss_log, 'a')
-            log_str = '[iter {}] d_adv_loss: {:.4f}  ' + \
-                                'f_slf_loss: {:.4f}  f_cyc_loss: {:.4f}  ' + \
-                                'f_adv_loss: {:.4f}  temp: {:.4f}  drop: {:.4f}'
 
             loss_log_file.write(formatted_log)
+            loss_log_file.write("\n")
 
             loss_log_file.close()
                 
