@@ -272,65 +272,66 @@ def train(config, vocab, model_F, model_D, train_iters, test_iters):
                 return temperature
     batch_iters = iter(train_iters)
 
-    try:
-        while True:
-            drop_decay = calc_temperature(config.drop_rate_config, global_step)
-            temperature = calc_temperature(config.temperature_config, global_step)
+    # try:
+    while True:
+        drop_decay = calc_temperature(config.drop_rate_config, global_step)
+        temperature = calc_temperature(config.temperature_config, global_step)
+        batch = next(batch_iters)
+        
+        for _ in range(config.iter_D):
             batch = next(batch_iters)
+            d_adv_loss = d_step(
+                config, vocab, model_F, model_D, optimizer_D, batch, temperature
+            )
+            his_d_adv_loss.append(d_adv_loss)
             
-            for _ in range(config.iter_D):
-                batch = next(batch_iters)
-                d_adv_loss = d_step(
-                    config, vocab, model_F, model_D, optimizer_D, batch, temperature
-                )
-                his_d_adv_loss.append(d_adv_loss)
-                
-            for _ in range(config.iter_F):
-                batch = next(batch_iters)
-                f_slf_loss, f_cyc_loss, f_adv_loss = f_step(
-                    config, vocab, model_F, model_D, optimizer_F, batch, temperature, drop_decay
-                )
-                his_f_slf_loss.append(f_slf_loss)
-                his_f_cyc_loss.append(f_cyc_loss)
-                his_f_adv_loss.append(f_adv_loss)
-                
+        for _ in range(config.iter_F):
+            batch = next(batch_iters)
+            f_slf_loss, f_cyc_loss, f_adv_loss = f_step(
+                config, vocab, model_F, model_D, optimizer_F, batch, temperature, drop_decay
+            )
+            his_f_slf_loss.append(f_slf_loss)
+            his_f_cyc_loss.append(f_cyc_loss)
+            his_f_adv_loss.append(f_adv_loss)
             
-            global_step += 1
-            #writer.add_scalar('rec_loss', rec_loss.item(), global_step)
-            #writer.add_scalar('loss', loss.item(), global_step)
+        
+        global_step += 1
+        #writer.add_scalar('rec_loss', rec_loss.item(), global_step)
+        #writer.add_scalar('loss', loss.item(), global_step)
+            
+            
+        if global_step % config.log_steps == 0:
+            avrg_d_adv_loss = np.mean(his_d_adv_loss)
+            avrg_f_slf_loss = np.mean(his_f_slf_loss)
+            avrg_f_cyc_loss = np.mean(his_f_cyc_loss)
+            avrg_f_adv_loss = np.mean(his_f_adv_loss)
+            log_str = '[iter {}] d_adv_loss: {:.4f}  ' + \
+                    'f_slf_loss: {:.4f}  f_cyc_loss: {:.4f}  ' + \
+                    'f_adv_loss: {:.4f}  temp: {:.4f}  drop: {:.4f}'
+            print(log_str.format(
+                global_step, avrg_d_adv_loss,
+                avrg_f_slf_loss, avrg_f_cyc_loss, avrg_f_adv_loss,
+                temperature, config.inp_drop_prob * drop_decay
+            ))
                 
-                
-            if global_step % config.log_steps == 0:
-                avrg_d_adv_loss = np.mean(his_d_adv_loss)
-                avrg_f_slf_loss = np.mean(his_f_slf_loss)
-                avrg_f_cyc_loss = np.mean(his_f_cyc_loss)
-                avrg_f_adv_loss = np.mean(his_f_adv_loss)
-                log_str = '[iter {}] d_adv_loss: {:.4f}  ' + \
-                        'f_slf_loss: {:.4f}  f_cyc_loss: {:.4f}  ' + \
-                        'f_adv_loss: {:.4f}  temp: {:.4f}  drop: {:.4f}'
-                print(log_str.format(
-                    global_step, avrg_d_adv_loss,
-                    avrg_f_slf_loss, avrg_f_cyc_loss, avrg_f_adv_loss,
-                    temperature, config.inp_drop_prob * drop_decay
-                ))
-                    
-            if global_step % config.eval_steps == 0:
-                his_d_adv_loss = []
-                his_f_slf_loss = []
-                his_f_cyc_loss = []
-                his_f_adv_loss = []
-                
-                #save model
-                torch.save(model_F.state_dict(), "{}/ckpts/{}_F.pth".format(config.save_folder, str(global_step).zfill(5)))
-                torch.save(model_D.state_dict(), "{}/ckpts/{}_D.pth".format(config.save_folder, str(global_step).zfill(5)))
-                if sys.platform == 'linux':
-                    subprocess.call('rsync -r ./save /googledrive/MyDrive/models -P')
+        if global_step % config.eval_steps == 0:
+            his_d_adv_loss = []
+            his_f_slf_loss = []
+            his_f_cyc_loss = []
+            his_f_adv_loss = []
+            
+            #save model
+            torch.save(model_F.state_dict(), "{}/ckpts/{}_F.pth".format(config.save_folder, str(global_step).zfill(5)))
+            torch.save(model_D.state_dict(), "{}/ckpts/{}_D.pth".format(config.save_folder, str(global_step).zfill(5)))
+            if sys.platform == 'linux':
+                os.system('rsync -r ./save /googledrive/MyDrive/models -P')
 
-                auto_eval(config, vocab, model_F, test_iters, global_step, temperature)
-                #for path, sub_writer in writer.all_writers.items():
-                #    sub_writer.flush()
-    except:
-        print("I guess you're done.............")
+            auto_eval(config, vocab, model_F, test_iters, global_step, temperature)
+            #for path, sub_writer in writer.all_writers.items():
+            #    sub_writer.flush()
+    # except Exception as e:
+    #     print(e)
+    #     print("I guess you're done.............")
 
 def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
     model_F.eval()
