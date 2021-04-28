@@ -374,14 +374,14 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
     gold_text, raw_output, rev_output = zip(inference(neg_iter, 0), inference(pos_iter, 1))
 
 
-    evaluator = Evaluator()
-    ref_text = evaluator.yelp_ref
+    # evaluator = Evaluator()
+    # ref_text = evaluator.yelp_ref
 
     
-    acc_neg = evaluator.yelp_acc_0(rev_output[0])
-    acc_pos = evaluator.yelp_acc_1(rev_output[1])
-    bleu_neg = evaluator.yelp_ref_bleu_0(rev_output[0])
-    bleu_pos = evaluator.yelp_ref_bleu_1(rev_output[1])
+    # acc_neg = evaluator.yelp_acc_0(rev_output[0])
+    # acc_pos = evaluator.yelp_acc_1(rev_output[1])
+    # bleu_neg = evaluator.yelp_ref_bleu_0(rev_output[0])
+    # bleu_pos = evaluator.yelp_ref_bleu_1(rev_output[1])
     # ppl_neg = evaluator.yelp_ppl(rev_output[0])
     # ppl_pos = evaluator.yelp_ppl(rev_output[1])
 
@@ -409,42 +409,42 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
     #  + \
     #   'ppl_pos: {:.4f} ppl_neg: {:.4f}\n'
     # ppl_pos, ppl_neg,
-    print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-          'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
-              acc_pos, acc_neg, bleu_pos, bleu_neg,
-    ))
+    # print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
+    #       'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+    #           acc_pos, acc_neg, bleu_pos, bleu_neg,
+    # ))
 
     
     # save output
-    save_file = config.save_folder + '/' + str(global_step) + '.txt'
-    eval_log_file = config.save_folder + '/eval_log.txt'
-    with open(eval_log_file, 'a') as fl:
-        print(('iter{:5d}:  acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-               'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
-            global_step, acc_pos, acc_neg, bleu_pos, bleu_neg,
-        ), file=fl)
-    with open(save_file, 'w') as fw:
-        print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-               'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
-            acc_pos, acc_neg, bleu_pos, bleu_neg,
-        ), file=fw)
+    # save_file = config.save_folder + '/' + str(global_step) + '.txt'
+    # eval_log_file = config.save_folder + '/eval_log.txt'
+    # with open(eval_log_file, 'a') as fl:
+    #     print(('iter{:5d}:  acc_pos: {:.4f} acc_neg: {:.4f} ' + \
+    #            'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+    #         global_step, acc_pos, acc_neg, bleu_pos, bleu_neg,
+    #     ), file=fl)
+    # with open(save_file, 'w') as fw:
+    #     print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
+    #            'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+    #         acc_pos, acc_neg, bleu_pos, bleu_neg,
+    #     ), file=fw)
 
-        for idx in range(len(rev_output[0])):
-            print('*' * 20, 'neg sample', '*' * 20, file=fw)
-            print('[gold]', gold_text[0][idx], file=fw)
-            print('[raw ]', raw_output[0][idx], file=fw)
-            print('[rev ]', rev_output[0][idx], file=fw)
-            print('[ref ]', ref_text[0][idx], file=fw)
+    #     for idx in range(len(rev_output[0])):
+    #         print('*' * 20, 'neg sample', '*' * 20, file=fw)
+    #         print('[gold]', gold_text[0][idx], file=fw)
+    #         print('[raw ]', raw_output[0][idx], file=fw)
+    #         print('[rev ]', rev_output[0][idx], file=fw)
+    #         print('[ref ]', ref_text[0][idx], file=fw)
 
-        print('*' * 20, '********', '*' * 20, file=fw)
+    #     print('*' * 20, '********', '*' * 20, file=fw)
 
-        for idx in range(len(rev_output[1])):
-            print('*' * 20, 'pos sample', '*' * 20, file=fw)
-            print('[gold]', gold_text[1][idx], file=fw)
-            print('[raw ]', raw_output[1][idx], file=fw)
-            print('[rev ]', rev_output[1][idx], file=fw)
-            print('[ref ]', ref_text[1][idx], file=fw)
+    #     for idx in range(len(rev_output[1])):
+    #         print('*' * 20, 'pos sample', '*' * 20, file=fw)
+    #         print('[gold]', gold_text[1][idx], file=fw)
+    #         print('[raw ]', raw_output[1][idx], file=fw)
+    #         print('[rev ]', rev_output[1][idx], file=fw)
+    #         print('[ref ]', ref_text[1][idx], file=fw)
 
-        print('*' * 20, '********', '*' * 20, file=fw)
+    #     print('*' * 20, '********', '*' * 20, file=fw)
         
     model_F.train()
