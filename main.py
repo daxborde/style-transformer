@@ -59,7 +59,7 @@ class Config():
     inp_rand_drop_fac = 0
     inp_drop_prob = 0
 
-    loss_log = './save'
+    loss_log = './save/loss_log.txt'
 
 def main():
     config = Config()
