@@ -368,8 +368,8 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
 
         return gold_text, raw_output, rev_output
 
-    pos_iter = test_iters.pos_iter
-    neg_iter = test_iters.neg_iter
+    pos_iter = test_iters.iter_1
+    neg_iter = test_iters.iter_2
     
     gold_text, raw_output, rev_output = zip(inference(neg_iter, 0), inference(pos_iter, 1))
 
