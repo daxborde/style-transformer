@@ -1,4 +1,4 @@
-import os
+import os, sys, subprocess
 import time
 import torch
 import numpy as np
@@ -323,6 +323,9 @@ def train(config, vocab, model_F, model_D, train_iters, test_iters):
                 #save model
                 torch.save(model_F.state_dict(), "{}/ckpts/{}_F.pth".format(config.save_folder, str(global_step).zfill(5)))
                 torch.save(model_D.state_dict(), "{}/ckpts/{}_D.pth".format(config.save_folder, str(global_step).zfill(5)))
+                if sys.platform == 'linux':
+                    subprocess.call('rsync -r ./save /googledrive/MyDrive/models -P')
+
                 auto_eval(config, vocab, model_F, test_iters, global_step, temperature)
                 #for path, sub_writer in writer.all_writers.items():
                 #    sub_writer.flush()
