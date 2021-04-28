@@ -308,11 +308,22 @@ def train(config, vocab, model_F, model_D, train_iters, test_iters):
             log_str = '[iter {}] d_adv_loss: {:.4f}  ' + \
                     'f_slf_loss: {:.4f}  f_cyc_loss: {:.4f}  ' + \
                     'f_adv_loss: {:.4f}  temp: {:.4f}  drop: {:.4f}'
-            print(log_str.format(
+            formatted_log = log_str.format(
                 global_step, avrg_d_adv_loss,
                 avrg_f_slf_loss, avrg_f_cyc_loss, avrg_f_adv_loss,
                 temperature, config.inp_drop_prob * drop_decay
-            ))
+            )
+            print(formatted_log)
+
+
+            loss_log_file = open(config.loss_log, 'a')
+            log_str = '[iter {}] d_adv_loss: {:.4f}  ' + \
+                                'f_slf_loss: {:.4f}  f_cyc_loss: {:.4f}  ' + \
+                                'f_adv_loss: {:.4f}  temp: {:.4f}  drop: {:.4f}'
+
+            loss_log_file.write(formatted_log)
+
+            loss_log_file.close()
                 
         if global_step % config.eval_steps == 0:
             his_d_adv_loss = []
