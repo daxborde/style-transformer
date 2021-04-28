@@ -1,4 +1,4 @@
-import os
+import os, sys, subprocess
 import time
 import torch
 import numpy as np
@@ -271,6 +271,8 @@ def train(config, vocab, model_F, model_D, train_iters, test_iters):
                 temperature = (1 - k) * t_a + k * t_b
                 return temperature
     batch_iters = iter(train_iters)
+
+    # try:
     while True:
         drop_decay = calc_temperature(config.drop_rate_config, global_step)
         temperature = calc_temperature(config.temperature_config, global_step)
@@ -304,13 +306,22 @@ def train(config, vocab, model_F, model_D, train_iters, test_iters):
             avrg_f_cyc_loss = np.mean(his_f_cyc_loss)
             avrg_f_adv_loss = np.mean(his_f_adv_loss)
             log_str = '[iter {}] d_adv_loss: {:.4f}  ' + \
-                      'f_slf_loss: {:.4f}  f_cyc_loss: {:.4f}  ' + \
-                      'f_adv_loss: {:.4f}  temp: {:.4f}  drop: {:.4f}'
-            print(log_str.format(
+                    'f_slf_loss: {:.4f}  f_cyc_loss: {:.4f}  ' + \
+                    'f_adv_loss: {:.4f}  temp: {:.4f}  drop: {:.4f}'
+            formatted_log = log_str.format(
                 global_step, avrg_d_adv_loss,
                 avrg_f_slf_loss, avrg_f_cyc_loss, avrg_f_adv_loss,
                 temperature, config.inp_drop_prob * drop_decay
-            ))
+            )
+            print(formatted_log)
+
+
+            loss_log_file = open(config.loss_log, 'a')
+
+            loss_log_file.write(formatted_log)
+            loss_log_file.write("\n")
+
+            loss_log_file.close()
                 
         if global_step % config.eval_steps == 0:
             his_d_adv_loss = []
@@ -319,11 +330,17 @@ def train(config, vocab, model_F, model_D, train_iters, test_iters):
             his_f_adv_loss = []
             
             #save model
-            torch.save(model_F.state_dict(), config.save_folder + '/ckpts/' + str(global_step) + '_F.pth')
-            torch.save(model_D.state_dict(), config.save_folder + '/ckpts/' + str(global_step) + '_D.pth')
+            torch.save(model_F.state_dict(), "{}/ckpts/{}_F.pth".format(config.save_folder, str(global_step).zfill(5)))
+            torch.save(model_D.state_dict(), "{}/ckpts/{}_D.pth".format(config.save_folder, str(global_step).zfill(5)))
+            if sys.platform == 'linux':
+                os.system('rsync -r ./save /googledrive/MyDrive/models -P')
+
             auto_eval(config, vocab, model_F, test_iters, global_step, temperature)
             #for path, sub_writer in writer.all_writers.items():
             #    sub_writer.flush()
+    # except Exception as e:
+    #     print(e)
+    #     print("I guess you're done.............")
 
 def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
     model_F.eval()
@@ -368,20 +385,20 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
 
         return gold_text, raw_output, rev_output
 
-    pos_iter = test_iters.pos_iter
-    neg_iter = test_iters.neg_iter
+    pos_iter = test_iters.iter_1
+    neg_iter = test_iters.iter_2
     
     gold_text, raw_output, rev_output = zip(inference(neg_iter, 0), inference(pos_iter, 1))
 
 
-    evaluator = Evaluator()
-    ref_text = evaluator.yelp_ref
+    # evaluator = Evaluator()
+    # ref_text = evaluator.yelp_ref
 
     
-    acc_neg = evaluator.yelp_acc_0(rev_output[0])
-    acc_pos = evaluator.yelp_acc_1(rev_output[1])
-    bleu_neg = evaluator.yelp_ref_bleu_0(rev_output[0])
-    bleu_pos = evaluator.yelp_ref_bleu_1(rev_output[1])
+    # acc_neg = evaluator.yelp_acc_0(rev_output[0])
+    # acc_pos = evaluator.yelp_acc_1(rev_output[1])
+    # bleu_neg = evaluator.yelp_ref_bleu_0(rev_output[0])
+    # bleu_pos = evaluator.yelp_ref_bleu_1(rev_output[1])
     # ppl_neg = evaluator.yelp_ppl(rev_output[0])
     # ppl_pos = evaluator.yelp_ppl(rev_output[1])
 
@@ -391,7 +408,7 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
         print('[gold]', gold_text[0][idx])
         print('[raw ]', raw_output[0][idx])
         print('[rev ]', rev_output[0][idx])
-        print('[ref ]', ref_text[0][idx])
+        # print('[ref ]', ref_text[0][idx])
 
     print('*' * 20, '********', '*' * 20)
     
@@ -402,49 +419,49 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
         print('[gold]', gold_text[1][idx])
         print('[raw ]', raw_output[1][idx])
         print('[rev ]', rev_output[1][idx])
-        print('[ref ]', ref_text[1][idx])
+        # print('[ref ]', ref_text[1][idx])
 
     print('*' * 20, '********', '*' * 20)
 
     #  + \
     #   'ppl_pos: {:.4f} ppl_neg: {:.4f}\n'
     # ppl_pos, ppl_neg,
-    print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-          'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
-              acc_pos, acc_neg, bleu_pos, bleu_neg,
-    ))
+    # print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
+    #       'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+    #           acc_pos, acc_neg, bleu_pos, bleu_neg,
+    # ))
 
     
     # save output
-    save_file = config.save_folder + '/' + str(global_step) + '.txt'
-    eval_log_file = config.save_folder + '/eval_log.txt'
-    with open(eval_log_file, 'a') as fl:
-        print(('iter{:5d}:  acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-               'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
-            global_step, acc_pos, acc_neg, bleu_pos, bleu_neg,
-        ), file=fl)
-    with open(save_file, 'w') as fw:
-        print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
-               'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
-            acc_pos, acc_neg, bleu_pos, bleu_neg,
-        ), file=fw)
+    # save_file = config.save_folder + '/' + str(global_step) + '.txt'
+    # eval_log_file = config.save_folder + '/eval_log.txt'
+    # with open(eval_log_file, 'a') as fl:
+    #     print(('iter{:5d}:  acc_pos: {:.4f} acc_neg: {:.4f} ' + \
+    #            'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+    #         global_step, acc_pos, acc_neg, bleu_pos, bleu_neg,
+    #     ), file=fl)
+    # with open(save_file, 'w') as fw:
+    #     print(('[auto_eval] acc_pos: {:.4f} acc_neg: {:.4f} ' + \
+    #            'bleu_pos: {:.4f} bleu_neg: {:.4f} ').format(
+    #         acc_pos, acc_neg, bleu_pos, bleu_neg,
+    #     ), file=fw)
 
-        for idx in range(len(rev_output[0])):
-            print('*' * 20, 'neg sample', '*' * 20, file=fw)
-            print('[gold]', gold_text[0][idx], file=fw)
-            print('[raw ]', raw_output[0][idx], file=fw)
-            print('[rev ]', rev_output[0][idx], file=fw)
-            print('[ref ]', ref_text[0][idx], file=fw)
+    #     for idx in range(len(rev_output[0])):
+    #         print('*' * 20, 'neg sample', '*' * 20, file=fw)
+    #         print('[gold]', gold_text[0][idx], file=fw)
+    #         print('[raw ]', raw_output[0][idx], file=fw)
+    #         print('[rev ]', rev_output[0][idx], file=fw)
+    #         print('[ref ]', ref_text[0][idx], file=fw)
 
-        print('*' * 20, '********', '*' * 20, file=fw)
+    #     print('*' * 20, '********', '*' * 20, file=fw)
 
-        for idx in range(len(rev_output[1])):
-            print('*' * 20, 'pos sample', '*' * 20, file=fw)
-            print('[gold]', gold_text[1][idx], file=fw)
-            print('[raw ]', raw_output[1][idx], file=fw)
-            print('[rev ]', rev_output[1][idx], file=fw)
-            print('[ref ]', ref_text[1][idx], file=fw)
+    #     for idx in range(len(rev_output[1])):
+    #         print('*' * 20, 'pos sample', '*' * 20, file=fw)
+    #         print('[gold]', gold_text[1][idx], file=fw)
+    #         print('[raw ]', raw_output[1][idx], file=fw)
+    #         print('[rev ]', rev_output[1][idx], file=fw)
+    #         print('[ref ]', ref_text[1][idx], file=fw)
 
-        print('*' * 20, '********', '*' * 20, file=fw)
+    #     print('*' * 20, '********', '*' * 20, file=fw)
         
     model_F.train()
