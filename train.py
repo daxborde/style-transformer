@@ -405,14 +405,14 @@ def auto_eval(config, vocab, model_F, test_iters, global_step, temperature):
     print("Outputting raw eval to files")
 
     with open("rawout-0-neg.txt", "w") as f:
-        f.write("gold, raw, rev\n")
+        f.write("gold|raw|rev\n")
         for i in range(len(rev_output[0])):
-            f.write(f"{gold_text[0][i]}, {raw_output[0][i]}, {rev_output[0][i]}\n")
+            f.write(f"{gold_text[0][i]}|{raw_output[0][i]}|{rev_output[0][i]}\n")
 
     with open("rawout-1-pos.txt", "w") as f:
         f.write("gold, raw, rev\n")
         for i in range(len(rev_output[1])):
-            f.write(f"{gold_text[1][i]}, {raw_output[1][i]}, {rev_output[1][i]}\n")
+            f.write(f"{gold_text[1][i]}|{raw_output[1][i]}|{rev_output[1][i]}\n")
 
     for k in range(5):
         idx = np.random.randint(len(rev_output[0]))
