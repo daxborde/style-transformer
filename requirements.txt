@@ -4,3 +4,4 @@ nltk
 Cython
 fasttext==0.8.3
 https://github.com/kpu/kenlm/archive/master.zip
+scikit-learn
